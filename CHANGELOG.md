@@ -1,5 +1,11 @@
 # wezam
 
+## 0.1.4
+
+### Patch Changes
+
+- [#9](https://github.com/cut0/wezam/pull/9) [`da3753c`](https://github.com/cut0/wezam/commit/da3753ce9a90ded77df125148ae420bc9cf23dbb) Thanks [@cut0](https://github.com/cut0)! - fix: package.json に repository.url を追加
+
 ## 0.1.3
 
 ### Patch Changes
