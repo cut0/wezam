@@ -47,7 +47,7 @@ export const createManagerUsecase = (context: UsecaseContext): ManagerUsecase =>
       const escapedPrompt = escapeShellArg(prompt);
       await wezterm.sendCommand({
         paneId: up.pane.pane_id,
-        command: `claude -w ${escapedPrompt}`,
+        command: `claude -w -- ${escapedPrompt}`,
       });
     },
 
