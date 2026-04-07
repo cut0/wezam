@@ -98,8 +98,8 @@ const main = async (): Promise<void> => {
     return prompt;
   };
 
-  const handleConfirmLaunch = (up: UnifiedPane, prompt: string): void => {
-    void usecases.manager.launchClaude(up, prompt);
+  const handleConfirmLaunch = (up: UnifiedPane, prompt: string, useWorktree: boolean): void => {
+    void usecases.manager.launchClaude(up, prompt, { useWorktree });
   };
 
   const handleHighlight = async (up: UnifiedPane): Promise<void> => {

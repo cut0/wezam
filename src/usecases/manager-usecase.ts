@@ -10,7 +10,11 @@ export type ManagerUsecase = {
   list: () => Promise<ManagerListOutput>;
   enrichStatus: (up: UnifiedPane) => Promise<UnifiedPane>;
   navigateTo: (up: UnifiedPane) => Promise<void>;
-  launchClaude: (up: UnifiedPane, prompt: string) => Promise<void>;
+  launchClaude: (
+    up: UnifiedPane,
+    prompt: string,
+    options: { useWorktree: boolean },
+  ) => Promise<void>;
   highlightTab: (up: UnifiedPane) => Promise<void>;
   unhighlightTab: (up: UnifiedPane) => Promise<void>;
 };
@@ -43,11 +47,16 @@ export const createManagerUsecase = (context: UsecaseContext): ManagerUsecase =>
       });
     },
 
-    launchClaude: async (up: UnifiedPane, prompt: string): Promise<void> => {
+    launchClaude: async (
+      up: UnifiedPane,
+      prompt: string,
+      options: { useWorktree: boolean },
+    ): Promise<void> => {
       const escapedPrompt = escapeShellArg(prompt);
+      const flag = options.useWorktree ? "-w -- " : "";
       await wezterm.sendCommand({
         paneId: up.pane.pane_id,
-        command: `claude -w -- ${escapedPrompt}`,
+        command: `claude ${flag}${escapedPrompt}`,
       });
     },
 

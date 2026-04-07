@@ -8,22 +8,36 @@ type Props = {
   selectedDir: string;
   pane: UnifiedPane;
   prompt: string;
+  useWorktree: boolean;
+  onToggleWorktree: () => void;
   onConfirm: () => void;
   onCancel: () => void;
 };
 
-export const ConfirmView: FC<Props> = ({ selectedDir, pane, prompt, onConfirm, onCancel }) => {
+export const ConfirmView: FC<Props> = ({
+  selectedDir,
+  pane,
+  prompt,
+  useWorktree,
+  onToggleWorktree,
+  onConfirm,
+  onCancel,
+}) => {
   const { rows } = useTerminalSize();
   const previewLines = prompt.split("\n");
   const maxPreview = Math.min(previewLines.length, rows - 6);
 
-  useInput((_input, key) => {
+  useInput((input, key) => {
     if (key.return) {
       onConfirm();
       return;
     }
     if (key.escape) {
       onCancel();
+      return;
+    }
+    if (input === "w") {
+      onToggleWorktree();
     }
   });
 
@@ -43,7 +57,14 @@ export const ConfirmView: FC<Props> = ({ selectedDir, pane, prompt, onConfirm, o
           <Text dimColor>... ({previewLines.length - maxPreview} more lines)</Text>
         )}
       </Box>
-      <Text dimColor>Enter send Esc cancel</Text>
+      <Box gap={2}>
+        <Text dimColor>Enter send</Text>
+        <Text dimColor>
+          w worktree:{" "}
+          <Text color={useWorktree ? "green" : "gray"}>{useWorktree ? "ON" : "OFF"}</Text>
+        </Text>
+        <Text dimColor>Esc cancel</Text>
+      </Box>
     </Box>
   );
 };
