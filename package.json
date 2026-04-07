@@ -1,13 +1,16 @@
 {
   "name": "wezam",
   "version": "0.1.2",
-  "type": "module",
   "bin": {
     "wezam": "./dist/cli/index.js"
   },
   "files": [
     "dist"
   ],
+  "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "start": "tsx src/cli/index.ts",
     "test": "vitest run",
@@ -36,8 +39,5 @@
     "typescript": "6.0.2",
     "vitest": "4.1.2"
   },
-  "packageManager": "pnpm@10.30.1",
-  "publishConfig": {
-    "access": "public"
-  }
+  "packageManager": "pnpm@10.30.1"
 }
