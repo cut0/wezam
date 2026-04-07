@@ -1,5 +1,5 @@
 ---
-"@fake-scope/fake-pkg": patch
+"wezam": patch
 ---
 
 fix: package.json のフォーマットを修正
