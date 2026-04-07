@@ -1,6 +1,10 @@
 {
   "name": "wezam",
   "version": "0.1.3",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cut0/wezam.git"
+  },
   "bin": {
     "wezam": "./dist/cli/index.js"
   },
