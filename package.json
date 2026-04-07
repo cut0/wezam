@@ -8,6 +8,10 @@
     "dist"
   ],
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cut0/wezam.git"
+  },
   "publishConfig": {
     "access": "public"
   },
