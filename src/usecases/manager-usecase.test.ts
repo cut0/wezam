@@ -111,7 +111,7 @@ describe("createManagerUsecase", () => {
       await usecase.launchClaude(up, "テスト");
       expect(mockWezterm.sendCommand).toHaveBeenCalledWith({
         paneId: 7,
-        command: "claude -w 'テスト'",
+        command: "claude -w -- 'テスト'",
       });
       expect(mockWezterm.navigateToPane).not.toHaveBeenCalled();
     });
@@ -121,7 +121,7 @@ describe("createManagerUsecase", () => {
       await usecase.launchClaude(up, "it's a $test");
       expect(mockWezterm.sendCommand).toHaveBeenCalledWith({
         paneId: 7,
-        command: "claude -w 'it'\\''s a $test'",
+        command: "claude -w -- 'it'\\''s a $test'",
       });
     });
   });
