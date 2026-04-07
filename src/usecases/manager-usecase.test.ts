@@ -106,9 +106,9 @@ describe("createManagerUsecase", () => {
   });
 
   describe("launchClaude", () => {
-    it("claude をプロンプト付きで起動する（フォーカスは移動しない）", async () => {
+    it("worktree 有効時は -w フラグ付きで起動する", async () => {
       const up = mockUnifiedPane({ pane: mockPane({ pane_id: 7, tab_id: 2 }) });
-      await usecase.launchClaude(up, "テスト");
+      await usecase.launchClaude(up, "テスト", { useWorktree: true });
       expect(mockWezterm.sendCommand).toHaveBeenCalledWith({
         paneId: 7,
         command: "claude -w -- 'テスト'",
@@ -116,9 +116,18 @@ describe("createManagerUsecase", () => {
       expect(mockWezterm.navigateToPane).not.toHaveBeenCalled();
     });
 
+    it("worktree 無効時は -w フラグなしで起動する", async () => {
+      const up = mockUnifiedPane({ pane: mockPane({ pane_id: 7, tab_id: 2 }) });
+      await usecase.launchClaude(up, "テスト", { useWorktree: false });
+      expect(mockWezterm.sendCommand).toHaveBeenCalledWith({
+        paneId: 7,
+        command: "claude 'テスト'",
+      });
+    });
+
     it("プロンプト内のシェル特殊文字がエスケープされる", async () => {
       const up = mockUnifiedPane({ pane: mockPane({ pane_id: 7 }) });
-      await usecase.launchClaude(up, "it's a $test");
+      await usecase.launchClaude(up, "it's a $test", { useWorktree: true });
       expect(mockWezterm.sendCommand).toHaveBeenCalledWith({
         paneId: 7,
         command: "claude -w -- 'it'\\''s a $test'",

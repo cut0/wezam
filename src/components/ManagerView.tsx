@@ -33,7 +33,7 @@ type Props = {
   onRefresh: () => Promise<DirectoryGroup[]>;
   onNavigate: (up: UnifiedPane) => void;
   onEditPrompt: (up: UnifiedPane) => string | undefined;
-  onConfirmLaunch: (up: UnifiedPane, prompt: string) => void;
+  onConfirmLaunch: (up: UnifiedPane, prompt: string, useWorktree: boolean) => void;
   onHighlight: (up: UnifiedPane) => void;
   onUnhighlight: (up: UnifiedPane) => void;
 };
@@ -62,6 +62,7 @@ export const ManagerView: FC<Props> = ({
     restoredState?.pendingPane,
   );
   const [pendingPrompt, setPendingPrompt] = useState<string>(restoredState?.pendingPrompt ?? "");
+  const [useWorktree, setUseWorktree] = useState(true);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -102,13 +103,17 @@ export const ManagerView: FC<Props> = ({
     [onEditPrompt],
   );
 
+  const handleToggleWorktree = useCallback(() => {
+    setUseWorktree((prev) => !prev);
+  }, []);
+
   const handleConfirm = useCallback(() => {
     if (!pendingPane) return;
-    onConfirmLaunch(pendingPane, pendingPrompt);
+    onConfirmLaunch(pendingPane, pendingPrompt, useWorktree);
     setPendingPane(undefined);
     setPendingPrompt("");
     setMode(MODE.paneSelect);
-  }, [pendingPane, pendingPrompt, onConfirmLaunch]);
+  }, [pendingPane, pendingPrompt, useWorktree, onConfirmLaunch]);
 
   const handleCancelConfirm = useCallback(() => {
     setPendingPane(undefined);
@@ -159,6 +164,8 @@ export const ManagerView: FC<Props> = ({
         selectedDir={selectedDir ?? ""}
         pane={pendingPane}
         prompt={pendingPrompt}
+        useWorktree={useWorktree}
+        onToggleWorktree={handleToggleWorktree}
         onConfirm={handleConfirm}
         onCancel={handleCancelConfirm}
       />
