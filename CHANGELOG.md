@@ -1,5 +1,15 @@
 # wezam
 
+## 0.1.5
+
+### Patch Changes
+
+- [#14](https://github.com/cut0/wezam/pull/14) [`8c5c010`](https://github.com/cut0/wezam/commit/8c5c0102d5e1a453f6d8b62d6d15887958932a66) Thanks [@cut0](https://github.com/cut0)! - fix: changeset のパッケージ名を wezam に修正
+
+- [#11](https://github.com/cut0/wezam/pull/11) [`366aa49`](https://github.com/cut0/wezam/commit/366aa49d8ea90710cccfbba71c353443681af197) Thanks [@cut0](https://github.com/cut0)! - feat: ConfirmView で worktree フラグを選択可能にする
+
+- [#13](https://github.com/cut0/wezam/pull/13) [`437e3fd`](https://github.com/cut0/wezam/commit/437e3fd7103eec49d2485207d112b6089d792db3) Thanks [@cut0](https://github.com/cut0)! - feat: TUI を左右分割ペインレイアウトに変更
+
 ## 0.1.4
 
 ### Patch Changes
