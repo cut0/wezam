@@ -25,9 +25,10 @@ const fetchDirectoryGroups = async (
 };
 
 type RestoredState = {
-  mode: "dir-select" | "pane-select" | "confirm";
+  mode: "split" | "confirm";
   selectedDir?: string;
   cursor: number;
+  focus?: "left" | "right";
   pendingPane?: UnifiedPane;
   pendingPrompt?: string;
 };
@@ -79,9 +80,10 @@ const main = async (): Promise<void> => {
 
     if (!prompt) {
       restored = {
-        mode: "pane-select",
+        mode: "split",
         selectedDir,
         cursor: cursorIndex >= 0 ? cursorIndex : 0,
+        focus: "right",
       };
       instance = renderApp();
       return undefined;
@@ -91,6 +93,7 @@ const main = async (): Promise<void> => {
       mode: "confirm",
       selectedDir,
       cursor: cursorIndex >= 0 ? cursorIndex : 0,
+      focus: "right",
       pendingPane: up,
       pendingPrompt: prompt,
     };
