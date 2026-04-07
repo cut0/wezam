@@ -1,25 +1,32 @@
-import { Box } from "ink";
+import { Box, Text } from "ink";
 import { useCallback, useEffect, useMemo, useState, type FC } from "react";
 import type { DirectoryGroup, UnifiedPane } from "../models/session.ts";
 import { Header } from "./shared/Header.tsx";
 import { StatusBar } from "./shared/StatusBar.tsx";
-import { DirectorySelect } from "./shared/DirectorySelect.tsx";
+import { DirectorySelect, sortDirectoryGroups } from "./shared/DirectorySelect.tsx";
 import { PaneListView } from "./PaneListView.tsx";
 import { ConfirmView } from "./ConfirmView.tsx";
 import { useTerminalSize } from "../hooks/use-terminal-size.ts";
 
 const MODE = {
-  dirSelect: "dir-select",
-  paneSelect: "pane-select",
+  split: "split",
   confirm: "confirm",
 } as const;
 
 type Mode = (typeof MODE)[keyof typeof MODE];
 
+const FOCUS = {
+  left: "left",
+  right: "right",
+} as const;
+
+type Focus = (typeof FOCUS)[keyof typeof FOCUS];
+
 type RestoredState = {
   mode: Mode;
   selectedDir?: string;
   cursor: number;
+  focus?: Focus;
   pendingPane?: UnifiedPane;
   pendingPrompt?: string;
 };
@@ -53,10 +60,18 @@ export const ManagerView: FC<Props> = ({
   onHighlight,
   onUnhighlight,
 }) => {
-  const { rows } = useTerminalSize();
+  const { rows, columns } = useTerminalSize();
   const [directoryGroups, setDirectoryGroups] = useState(initialDirectoryGroups);
-  const [mode, setMode] = useState<Mode>(restoredState?.mode ?? MODE.dirSelect);
-  const [selectedDir, setSelectedDir] = useState<string | undefined>(restoredState?.selectedDir);
+  const [mode, setMode] = useState<Mode>(restoredState?.mode ?? MODE.split);
+  const [focus, setFocus] = useState<Focus>(restoredState?.focus ?? FOCUS.left);
+
+  const initialDir = useMemo((): string | undefined => {
+    if (restoredState?.selectedDir) return restoredState.selectedDir;
+    const sorted = sortDirectoryGroups(initialDirectoryGroups, currentDir);
+    return sorted[0]?.cwd;
+  }, []);
+
+  const [selectedDir, setSelectedDir] = useState<string | undefined>(initialDir);
   const [paneListCursor, setPaneListCursor] = useState(restoredState?.cursor ?? 0);
   const [pendingPane, setPendingPane] = useState<UnifiedPane | undefined>(
     restoredState?.pendingPane,
@@ -72,7 +87,9 @@ export const ManagerView: FC<Props> = ({
         })
         .catch(() => {});
     }, POLL_INTERVAL);
-    return () => clearInterval(timer);
+    return (): void => {
+      clearInterval(timer);
+    };
   }, [onRefresh]);
 
   const selectedGroup = useMemo(
@@ -80,20 +97,23 @@ export const ManagerView: FC<Props> = ({
     [directoryGroups, selectedDir],
   );
 
-  const handleDirSelect = useCallback((cwd: string) => {
+  const handleDirCursorChange = useCallback((cwd: string): void => {
     setSelectedDir(cwd);
     setPaneListCursor(0);
-    setMode(MODE.paneSelect);
   }, []);
 
-  const handleBackToDir = useCallback(() => {
-    setSelectedDir(undefined);
+  const handleDirSelect = useCallback((cwd: string): void => {
+    setSelectedDir(cwd);
     setPaneListCursor(0);
-    setMode(MODE.dirSelect);
+    setFocus(FOCUS.right);
+  }, []);
+
+  const handleBackToDir = useCallback((): void => {
+    setFocus(FOCUS.left);
   }, []);
 
   const handleLaunch = useCallback(
-    (up: UnifiedPane) => {
+    (up: UnifiedPane): void => {
       const prompt = onEditPrompt(up);
       if (!prompt) return;
       setPendingPane(up);
@@ -103,22 +123,24 @@ export const ManagerView: FC<Props> = ({
     [onEditPrompt],
   );
 
-  const handleToggleWorktree = useCallback(() => {
+  const handleToggleWorktree = useCallback((): void => {
     setUseWorktree((prev) => !prev);
   }, []);
 
-  const handleConfirm = useCallback(() => {
+  const handleConfirm = useCallback((): void => {
     if (!pendingPane) return;
     onConfirmLaunch(pendingPane, pendingPrompt, useWorktree);
     setPendingPane(undefined);
     setPendingPrompt("");
-    setMode(MODE.paneSelect);
+    setMode(MODE.split);
+    setFocus(FOCUS.right);
   }, [pendingPane, pendingPrompt, useWorktree, onConfirmLaunch]);
 
-  const handleCancelConfirm = useCallback(() => {
+  const handleCancelConfirm = useCallback((): void => {
     setPendingPane(undefined);
     setPendingPrompt("");
-    setMode(MODE.paneSelect);
+    setMode(MODE.split);
+    setFocus(FOCUS.right);
   }, []);
 
   if (isLoading) {
@@ -139,22 +161,12 @@ export const ManagerView: FC<Props> = ({
     );
   }
 
-  if (mode === MODE.dirSelect) {
-    if (directoryGroups.length === 0) {
-      return (
-        <Box flexDirection="column" height={rows}>
-          <Header title="WezTerm AI Manager" />
-          <StatusBar message="No Wezterm panes found" type="info" />
-        </Box>
-      );
-    }
+  if (directoryGroups.length === 0) {
     return (
-      <DirectorySelect
-        title="WezTerm AI Manager"
-        directoryGroups={directoryGroups}
-        currentDir={currentDir}
-        onSelect={handleDirSelect}
-      />
+      <Box flexDirection="column" height={rows}>
+        <Header title="WezTerm AI Manager" />
+        <StatusBar message="No Wezterm panes found" type="info" />
+      </Box>
     );
   }
 
@@ -172,22 +184,61 @@ export const ManagerView: FC<Props> = ({
     );
   }
 
-  if (!selectedGroup) {
-    setMode(MODE.dirSelect);
-    return null;
-  }
+  const panelHeight = rows - 5;
+  const leftWidth = Math.floor(columns / 3);
+  const rightWidth = columns - leftWidth;
 
   return (
-    <PaneListView
-      key={selectedDir}
-      selectedDir={selectedDir ?? ""}
-      group={selectedGroup}
-      initialCursor={paneListCursor}
-      onNavigate={onNavigate}
-      onLaunch={handleLaunch}
-      onHighlight={onHighlight}
-      onUnhighlight={onUnhighlight}
-      onBack={handleBackToDir}
-    />
+    <Box flexDirection="column" height={rows}>
+      <Header title="WezTerm AI Manager" />
+      <Box flexDirection="row" flexGrow={1}>
+        <Box
+          flexDirection="column"
+          width={leftWidth}
+          borderStyle="round"
+          borderColor={focus === FOCUS.left ? "green" : "gray"}
+        >
+          <DirectorySelect
+            directoryGroups={directoryGroups}
+            currentDir={currentDir}
+            isFocused={focus === FOCUS.left}
+            availableRows={panelHeight}
+            onSelect={handleDirSelect}
+            onCursorChange={handleDirCursorChange}
+          />
+        </Box>
+        <Box
+          flexDirection="column"
+          width={rightWidth}
+          borderStyle="round"
+          borderColor={focus === FOCUS.right ? "green" : "gray"}
+        >
+          {selectedGroup ? (
+            <PaneListView
+              key={selectedDir}
+              selectedDir={selectedDir ?? ""}
+              group={selectedGroup}
+              initialCursor={paneListCursor}
+              isFocused={focus === FOCUS.right}
+              availableRows={panelHeight}
+              onNavigate={onNavigate}
+              onLaunch={handleLaunch}
+              onHighlight={onHighlight}
+              onUnhighlight={onUnhighlight}
+              onBack={handleBackToDir}
+            />
+          ) : (
+            <Box paddingLeft={1}>
+              <Text dimColor>No sessions</Text>
+            </Box>
+          )}
+        </Box>
+      </Box>
+      <Text dimColor>
+        {focus === FOCUS.left
+          ? "\u2191/\u2193 move  Enter/\u2192 select  q quit"
+          : "\u2191/\u2193 move  Enter launch  f focus  Esc/\u2190 back  q quit"}
+      </Text>
+    </Box>
   );
 };

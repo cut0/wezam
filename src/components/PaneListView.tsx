@@ -1,10 +1,8 @@
 import { Box, Text, useApp, useInput } from "ink";
 import { useCallback, useMemo, useRef, useState, type FC, type ReactNode } from "react";
 import type { DirectoryGroup, UnifiedPane } from "../models/session.ts";
-import { Header } from "./shared/Header.tsx";
 import { TabLabel } from "./sessions/TabHeader.tsx";
 import { PaneItem } from "./sessions/PaneItem.tsx";
-import { useTerminalSize } from "../hooks/use-terminal-size.ts";
 import { useScroll } from "../hooks/use-scroll.ts";
 
 type RenderLine =
@@ -15,6 +13,8 @@ type Props = {
   selectedDir: string;
   group: DirectoryGroup;
   initialCursor?: number;
+  isFocused: boolean;
+  availableRows: number;
   onNavigate: (up: UnifiedPane) => void;
   onLaunch: (up: UnifiedPane) => void;
   onHighlight: (up: UnifiedPane) => void;
@@ -26,6 +26,8 @@ export const PaneListView: FC<Props> = ({
   selectedDir,
   group,
   initialCursor,
+  isFocused,
+  availableRows,
   onNavigate,
   onLaunch,
   onHighlight,
@@ -33,7 +35,6 @@ export const PaneListView: FC<Props> = ({
   onBack,
 }) => {
   const { exit } = useApp();
-  const { rows } = useTerminalSize();
   const [cursor, setCursor] = useState(initialCursor ?? 0);
   const highlightedRef = useRef<UnifiedPane | undefined>(undefined);
 
@@ -62,11 +63,11 @@ export const PaneListView: FC<Props> = ({
     [allLines, clampedCursor],
   );
 
-  const reservedLines = 4;
+  const reservedLines = 1;
   const { scrollOffset, visibleCount } = useScroll(
     cursorLineIndex,
     allLines.length,
-    rows - reservedLines,
+    availableRows - reservedLines,
   );
   const visibleLines = useMemo(
     () => allLines.slice(scrollOffset, scrollOffset + visibleCount),
@@ -74,7 +75,7 @@ export const PaneListView: FC<Props> = ({
   );
 
   const highlight = useCallback(
-    (up: UnifiedPane | undefined) => {
+    (up: UnifiedPane | undefined): void => {
       const prev = highlightedRef.current;
       if (prev && prev !== up) onUnhighlight(prev);
       if (up) onHighlight(up);
@@ -83,14 +84,14 @@ export const PaneListView: FC<Props> = ({
     [onHighlight, onUnhighlight],
   );
 
-  const clearHighlight = useCallback(() => {
+  const clearHighlight = useCallback((): void => {
     const prev = highlightedRef.current;
     if (prev) onUnhighlight(prev);
     highlightedRef.current = undefined;
   }, [onUnhighlight]);
 
   const moveCursor = useCallback(
-    (next: number) => {
+    (next: number): void => {
       const clamped = Math.max(0, Math.min(dirPanes.length - 1, next));
       setCursor(clamped);
       highlight(dirPanes[clamped]);
@@ -98,49 +99,52 @@ export const PaneListView: FC<Props> = ({
     [dirPanes, highlight],
   );
 
-  // Initial highlight
   const didInitRef = useRef(false);
   if (!didInitRef.current && dirPanes.length > 0) {
     didInitRef.current = true;
     highlight(dirPanes[clampedCursor]);
   }
 
-  useInput((input, key) => {
-    if (input === "q") {
-      clearHighlight();
-      exit();
-      return;
-    }
-
-    if (key.escape) {
-      clearHighlight();
-      onBack();
-      return;
-    }
-
-    if (key.upArrow) {
-      moveCursor(clampedCursor - 1);
-      return;
-    }
-
-    if (key.downArrow) {
-      moveCursor(clampedCursor + 1);
-      return;
-    }
-
-    if (input === "f") {
-      onNavigate(dirPanes[clampedCursor]);
-      return;
-    }
-
-    if (key.return) {
-      const up = dirPanes[clampedCursor];
-      if (up?.kind === "available") {
+  useInput(
+    (input, key) => {
+      if (input === "q") {
         clearHighlight();
-        onLaunch(up);
+        exit();
+        return;
       }
-    }
-  });
+
+      if (key.escape || key.leftArrow) {
+        clearHighlight();
+        onBack();
+        return;
+      }
+
+      if (key.upArrow) {
+        moveCursor(clampedCursor - 1);
+        return;
+      }
+
+      if (key.downArrow) {
+        moveCursor(clampedCursor + 1);
+        return;
+      }
+
+      if (input === "f") {
+        const pane = dirPanes[clampedCursor];
+        if (pane) onNavigate(pane);
+        return;
+      }
+
+      if (key.return) {
+        const up = dirPanes[clampedCursor];
+        if (up?.kind === "available") {
+          clearHighlight();
+          onLaunch(up);
+        }
+      }
+    },
+    { isActive: isFocused },
+  );
 
   const renderLine = (line: RenderLine, i: number): ReactNode => {
     if (line.kind === "tab") {
@@ -158,14 +162,19 @@ export const PaneListView: FC<Props> = ({
   };
 
   return (
-    <Box flexDirection="column" height={rows}>
-      <Header title={`WezTerm AI Manager — ${selectedDir}`} />
+    <Box flexDirection="column">
+      <Box paddingLeft={1}>
+        <Text bold color={isFocused ? "green" : "gray"}>
+          Sessions
+        </Text>
+        <Text dimColor>
+          {" "}
+          {selectedDir} ({clampedCursor + 1}/{dirPanes.length})
+        </Text>
+      </Box>
       <Box flexDirection="column" flexGrow={1} overflow="hidden">
         {visibleLines.map(renderLine)}
       </Box>
-      <Text dimColor>
-        Up/Down move Enter launch f focus Esc back q quit ({clampedCursor + 1}/{dirPanes.length})
-      </Text>
     </Box>
   );
 };
