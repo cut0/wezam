@@ -18,14 +18,6 @@ A terminal UI for managing Claude Code sessions on WezTerm. Browse active sessio
 
 ## Install
 
-From npm:
-
-```sh
-pnpm add -g wezam@0.1.2
-```
-
-From source:
-
 ```sh
 git clone https://github.com/cut0/claude-armor.git
 cd claude-armor
@@ -52,14 +44,6 @@ pnpm lint:check   # Lint with oxlint
 pnpm format:check # Check formatting with oxfmt
 pnpm build        # Bundle with esbuild
 ```
-
-## Dependencies
-
-| Package | Version |
-| --- | --- |
-| ink | 6.8.0 |
-| @inkjs/ui | 2.0.0 |
-| react | 19.2.4 |
 
 ## License
 
