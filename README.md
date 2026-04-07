@@ -19,10 +19,7 @@ A terminal UI for managing Claude Code sessions on WezTerm. Browse active sessio
 ## Install
 
 ```sh
-git clone https://github.com/cut0/claude-armor.git
-cd claude-armor
-pnpm install
-pnpm build
+pnpm add -g wezam
 ```
 
 ## Usage
