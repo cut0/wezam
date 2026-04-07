@@ -1,5 +1,5 @@
 ---
-"@fake-scope/fake-pkg": patch
+"wezam": patch
 ---
 
 fix: separate -w flag from prompt with --
